@@ -43,6 +43,8 @@ from bpy_extras.wm_utils.progress_report import ProgressReport
 
 verts_with_vcol = []
 verts_vcols = []
+use_clamp_x = False
+use_clamp_y = False
 
 def line_value(line_split):
     """
@@ -124,6 +126,10 @@ def create_materials(filepath, relpath,
             texture.image = image
         
         blender_material.use_transparency = True
+        global use_clamp_x
+        global use_clamp_y
+        image.use_clamp_x = use_clamp_x
+        image.use_clamp_y = use_clamp_y
 
         # Adds textures for materials (rendering)
         if type == 'Kd':
@@ -244,6 +250,8 @@ def create_materials(filepath, relpath,
 
     for libname in sorted(material_libs):
         # print(libname)
+        global use_clamp_x
+        global use_clamp_y
         mtlpath = os.path.join(DIR, libname)
         if not os.path.exists(mtlpath):
             print("\tMaterial not found MTL: %r" % mtlpath)
@@ -270,6 +278,8 @@ def create_materials(filepath, relpath,
 
                 if line_id == b'newmtl':
                     # Finalize previous mat, if any.
+                    use_clamp_x = False
+                    use_clamp_y = False
                     if context_material:
                         emit_value = sum(emit_colors) / 3.0
                         if emit_value > 1e-6:
@@ -450,6 +460,13 @@ def create_materials(filepath, relpath,
                         img_data = line.split()[1:]
                         if img_data:
                             load_material_image(context_material, context_material_name, img_data, line, 'refl')
+                    elif line_id == b'clamp':
+                        if line == b'clamp x':
+                            use_clamp_x = True
+                        elif line == b'clamp y':
+                            use_clamp_y = True
+                        else:
+                            print("\t'%r' (ignored)" % (line))
                     else:
                         print("\t%r:%r (ignored)" % (filepath, line))
             mtl.close()
